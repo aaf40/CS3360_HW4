@@ -15,6 +15,9 @@ class Simulator:
         self.ready_queue = queue.Queue()
         self.total_waiting_time = 0
         self.total_service_time = 0
+        self.total_turnaround_time = 0
+        self.ready_queue_length_samples = []
+        self.total_processes_arrived = 0
 
     def run(self):
 
@@ -43,6 +46,8 @@ class Simulator:
         
         next_process = self.generate_process(self.clock)
         self.schedule_event("ARRIVAL", next_process.arrival_time, next_process)
+        self.total_processes_arrived += 1
+        self.ready_queue_length_samples.append(self.ready_queue.qsize())
 
     def handle_departure(self, event):
         if self.ready_queue.empty():
@@ -55,6 +60,9 @@ class Simulator:
         self.total_service_time += event.process.service_time
         waiting_time = self.clock - event.process.arrival_time - event.process.service_time
         self.total_waiting_time += max(0, waiting_time)
+        turnaround_time = self.clock - event.process.arrival_time
+        self.total_turnaround_time += turnaround_time
+        self.ready_queue_length_samples.append(self.ready_queue.qsize())
 
     def generate_process(self, last_arrival_time):
         inter_arrival_time = self.generate_exponential(1.0 / self.lambda_rate)
@@ -78,8 +86,13 @@ class Simulator:
 
     def report_metrics(self):
         average_waiting_time = self.total_waiting_time / self.processes_completed
-        average_service_time = self.total_service_time / self.processes_completed
+        average_turnaround_time = self.total_turnaround_time / self.processes_completed
+        total_throughput = self.processes_completed / self.clock
         CPU_utilization = self.total_service_time / self.clock
-        print(f"Average Waiting Time: {average_waiting_time}")
-        print(f"Average Service Time: {average_service_time}")
+        average_ready_queue_length = sum(self.ready_queue_length_samples) / len(self.ready_queue_length_samples) if self.ready_queue_length_samples else 0
+
+        #print(f"Average Waiting Time: {average_waiting_time}")
+        print(f"Average Turnaround Time: {average_turnaround_time}")
+        print(f"Total Throughput: {total_throughput}")
         print(f"CPU Utilization: {CPU_utilization * 100}%")
+        print(f"Average Number of Processes in Ready Queue: {average_ready_queue_length}")
