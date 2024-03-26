@@ -47,7 +47,6 @@ class Simulator:
         next_process = self.generate_process(self.clock)
         self.schedule_event("ARRIVAL", next_process.arrival_time, next_process)
         self.total_processes_arrived += 1
-        self.ready_queue_length_samples.append(self.ready_queue.qsize())
 
     def handle_departure(self, event):
         if self.ready_queue.empty():
